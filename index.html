@@ -25,7 +25,7 @@
         </div>
         <div>
           <h1 class="font-bold text-lg leading-tight">9Router Studio</h1>
-          <p class="text-xs text-slate-400" id="connectionStatus">Chưa kết nối</p>
+          <p class="text-xs text-slate-400" id="connectionStatus">Sẵn sàng kết nối</p>
         </div>
       </div>
       <button onclick="toggleModal('settingsModal')" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition">
@@ -74,7 +74,7 @@
         <div>
           <label class="block text-slate-400 mb-1">Base URL (9Router Endpoint)</label>
           <input type="text" id="baseUrl" value="http://localhost:20128/v1" placeholder="https://xxxx.ngrok-free.app/v1" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500">
-          <p class="text-[11px] text-slate-500 mt-1">Dùng URL ngrok nếu bạn chạy web này từ Vercel.</p>
+          <p class="text-[11px] text-slate-500 mt-1">Dùng URL ngrok hoặc Tunnel của 9Router.</p>
         </div>
 
         <div>
@@ -84,7 +84,7 @@
 
         <div>
           <label class="block text-slate-400 mb-1">Model / Combo Name</label>
-          <input type="text" id="modelName" value="9router-combo" placeholder="gemini-2.5-flash hoặc 9router-combo" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500">
+          <input type="text" id="modelName" value="9router-combo" placeholder="9router-combo" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500">
         </div>
       </div>
 
@@ -172,18 +172,19 @@
           },
           body: JSON.stringify({
             model: config.model,
-            messages: [{ role: 'user', content: text }]
+            messages: [{ role: 'user', content: text }],
+            stream: false // Tắt chế độ stream để nhận JSON trực tiếp, tránh lỗi phân tích cú pháp
           })
         });
 
         const data = await response.json();
         const aiContainer = document.getElementById(aiMsgId);
 
-        if (data.choices && data.choices[0] && data.choices[0].message) {
+        if (response.ok && data.choices && data.choices[0] && data.choices[0].message) {
           const content = data.choices[0].message.content;
           aiContainer.innerHTML = marked.parse(content);
         } else {
-          aiContainer.innerHTML = `<span class="text-red-400">Lỗi từ 9Router: ${JSON.stringify(data)}</span>`;
+          aiContainer.innerHTML = `<span class="text-red-400">Lỗi từ 9Router: ${data.error ? (typeof data.error === 'object' ? data.error.message : data.error) : JSON.stringify(data)}</span>`;
         }
       } catch (err) {
         document.getElementById(aiMsgId).innerHTML = `<span class="text-red-400">Lỗi kết nối tới 9Router (${config.baseUrl}): ${err.message}</span>`;
